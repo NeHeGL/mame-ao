@@ -1,11 +1,17 @@
 # mame-ao
 Easiest way to use MAME & HBMAME. Automatic download and setup of all files from GitHub, BitTorrent, and archive.org on the fly.
 
+**Enhanced Fork** - This is an enhanced version of the original MAME-AO by [Sam Ludlow](https://github.com/sam-ludlow/mame-ao) with additional features including:
+- 🎨 **Colorized Console Output** - Beautiful ANSI color-coded interface for better readability
+- 📖 **Built-in Help System** - New `.help` command with comprehensive command reference
+- ⚡ **Enhanced Asset Commands** - New `.place` and `.update` commands for easier asset management
+- 🎯 **Improved User Experience** - Better visual feedback and progress indicators
+
 ![MAME-AO UI](https://raw.githubusercontent.com/sam-ludlow/mame-ao/main/images/mame-ao-ui.png)
 
 ## Installation & Usage
 - create an empty directory e.g. `C:\MameAO`
-- download latest release ZIP from https://github.com/sam-ludlow/mame-ao/releases/latest (Do not use `_x64`)
+- download latest release ZIP from https://github.com/NeHeGL/mame-ao/releases/latest (Do not use `_x64`)
 - put ZIP in empty directory and extract
 - double click "mame-ao.exe"
 - wait for the MAME-AO to start
@@ -54,7 +60,9 @@ To remove BitTorrent use the UI or command `.btx` then use the command `.creds` 
 NOTE: MAME-AO application is 32 bit to keep RAM usage down.
  
 ## Reporting issues
-https://github.com/sam-ludlow/mame-ao/issues
+https://github.com/NeHeGL/mame-ao/issues
+
+For issues with the original MAME-AO (non-enhanced features), please report to the original project: https://github.com/sam-ludlow/mame-ao/issues
 
 ## HBMAME - HomeBrew MAME
 Enable HBMAME from the about page or use the command `.core hbmame`. Only works with BitTorrent, DOME-BT will restart to enable new core.
@@ -151,8 +159,10 @@ There are also commands available they all start with a dot `.`
 |.dbs|Software database SQL query|`.dbs SELECT softwarelist.* FROM softwarelist ORDER BY softwarelist.name`|
 |.export|Run the export function, [see export section](#export)|`.export mr C:\EXPORT`|
 |.fetch|Fetch all required assets, used for maintaining full sets|`.fetch sr`|
+|.help|**NEW** Show comprehensive command reference with all available commands|`.help`|
 |.import|Run the import function, [see import section](#import)|`.import C:\IMPORT`|
 |.list|List saved state and previous MAME versions|`.list`|
+|.place|**NEW** Place specific assets for a machine/software (MR, MD, SR, SD, *)|`.place mr pacman ""`|
 |.r|Reload `UI.html` & `_styles.css` usfull when developing the UI|`.r`|
 |.readme|Show the mame-ao README on github.com|`.readme`|
 |.report|Run reports, [see reports section](#reports)|`.report avsum`|
@@ -166,6 +176,7 @@ There are also commands available they all start with a dot `.`
 |.ui|Launch the UI in default browser|`.ui`|
 |.up|Self update MAME-AO to the latest on GitHub|`.up`|
 |.upany|Self update MAME-AO anyway even if up to date, this can be used to clear the Windows Defender warning on first install.|`.upany`|
+|.update|**NEW** Download & place all missing assets + artwork/samples (MR, MD, SR, SD, *)|`.update mr`|
 |.valid|Validate the hash store, [see validate store section](#validate-store)|`.valid rom`|
 |.what|View current MAME whatsnew.txt in default browser.|`.what`|
 
@@ -390,6 +401,11 @@ See information on the Archive.org Items in use by MAME-AO by going to the About
 You can run `Source Exists` reports to see if the items are missing anything.
 
 ## Credits
+
+### Sam Ludlow - Original MAME-AO Creator
+This enhanced fork is based on the excellent work of Sam Ludlow, who created the original MAME-AO project. His innovative approach to MAME asset management and the hash store system made this all possible.
+
+Original MAME-AO Project: https://github.com/sam-ludlow/mame-ao
 
 ### MAME
 Multi-purpose emulation framework.
