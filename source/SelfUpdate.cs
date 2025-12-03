@@ -11,6 +11,23 @@ namespace Spludlow.MameAO
 	{
 		public static void Update(int startingPid)
 		{
+			// AUTO-UPDATE DISABLED - This is a custom enhanced version
+			// To prevent accidental overwrites of custom features (panel view, sorting, etc.)
+			Console.WriteLine("╔════════════════════════════════════════════════════════════════╗");
+			Console.WriteLine("║  AUTO-UPDATE DISABLED                                          ║");
+			Console.WriteLine("║                                                                ║");
+			Console.WriteLine("║  This is a custom enhanced version with additional features:   ║");
+			Console.WriteLine("║  • Panel/Grid View for games                                   ║");
+			Console.WriteLine("║  • Column Sorting (name, year, manufacturer, etc.)             ║");
+			Console.WriteLine("║  • Enhanced Navigation                                         ║");
+			Console.WriteLine("║                                                                ║");
+			Console.WriteLine("║  Auto-update has been disabled to protect these enhancements.  ║");
+			Console.WriteLine("║  Manual updates only to prevent losing custom features.        ║");
+			Console.WriteLine("╚════════════════════════════════════════════════════════════════╝");
+			return;
+
+			// ORIGINAL UPDATE CODE DISABLED BELOW
+			/*
 			string updateDirectory = Path.Combine(Globals.TempDirectory, "UPDATE");
 
 			if (startingPid <= 0)
@@ -79,6 +96,7 @@ namespace Spludlow.MameAO
 					Tools.ReportError(e, "UPDATE FATAL ERROR", true);
 				}
 			}
+			*/
 		}
 
 		public static void UpdateChild(string updateDirectory, int startingPid)

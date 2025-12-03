@@ -6,6 +6,118 @@
 
 	<link rel="stylesheet" type="text/css" href="/styles.css" />
 
+	<style>
+		/* Column sorting styles */
+		th .sort-indicator {
+			font-size: 0.8em;
+			color: #999;
+			margin-left: 4px;
+		}
+		
+		th[data-sort-direction="asc"] .sort-indicator,
+		th[data-sort-direction="desc"] .sort-indicator {
+			color: #000;
+			font-weight: bold;
+		}
+		
+		th:hover .sort-indicator {
+			color: #666;
+		}
+		
+		/* Grid layout for machines and software */
+		.game-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+			gap: 15px;
+			padding: 10px;
+		}
+		
+		.game-card {
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			overflow: hidden;
+			background: #fff;
+			transition: transform 0.2s, box-shadow 0.2s;
+			cursor: pointer;
+		}
+		
+		.game-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+		}
+		
+		.game-card-image {
+			width: 100%;
+			height: 180px;
+			background: #f0f0f0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+		}
+		
+		.game-card-image img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: crisp-edges;
+			image-rendering: pixelated;
+			-ms-interpolation-mode: nearest-neighbor;
+			backface-visibility: hidden;
+			-webkit-backface-visibility: hidden;
+			transform: translateZ(0);
+			-webkit-transform: translateZ(0);
+		}
+		
+		.game-card-info {
+			padding: 8px;
+			font-size: 9px;
+			line-height: 1.3;
+			background: #fafafa;
+		}
+		
+		.game-card-title {
+			font-weight: bold;
+			font-size: 11px;
+			margin-bottom: 4px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		
+		.game-card-row {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 2px;
+		}
+		
+		.game-card-label {
+			color: #666;
+			font-weight: bold;
+		}
+		
+		.game-card-value {
+			color: #000;
+			text-align: right;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			max-width: 60%;
+		}
+		
+		.game-card-fav {
+			position: absolute;
+			top: 5px;
+			right: 5px;
+			z-index: 10;
+		}
+		
+		.game-card-status-good { background-color: #90EE90; }
+		.game-card-status-imperfect { background-color: #FFD700; }
+		.game-card-status-preliminary { background-color: #FFA500; }
+	</style>
+
 	<script type="text/javascript">
 
 		const _rootMenu =
@@ -94,7 +206,6 @@
 		let _pathParts;
 		let _info;
 		let _currentMenu;
-		let _updateAvailable = false;
 		let _inTick = false;
 
 		const main = async () => {
@@ -194,19 +305,10 @@
 		const mainWork = async () => {
 
 			//
-			// Info & update check
+			// Info
 			//
 
 			_info = await fetchJson('/api/info');
-
-			if (_info.version_name_current !== _info.version_name_available) {
-				_rootMenu.push({
-					text: `Update Available ${_info.version_name_current} => ${_info.version_name_available}`,
-					title: `Update ${_info.version_name_current} => ${_info.version_name_available}`,
-					href: '/update',
-					style: 'background-color: #ffa500;',
-				});
-			}
 
 
 			//
@@ -331,7 +433,6 @@
 			}
 
 			const routeFunction = {
-				'/update': update,
 				'/genres': genres,
 				'/saved': saved,
 				'/reports/run': runReports,
@@ -805,21 +906,6 @@
 		}
 
 		//
-		// Update
-		//
-		const update = async () => {
-
-			const canvas = getCanvas();
-
-			const html = `<p>New MAME-AO update avaialable ${_info.version_name_current} => ${_info.version_name_available}</p>` +
-				`<a href="${_baseUrl}/api/update">Click here to update immediately.</a>`;
-
-			const div = document.createElement('div');
-			div.innerHTML = html;
-			canvas.appendChild(div);
-		}
-
-		//
 		// Tools
 		//
 		const tools = async () => {
@@ -1284,7 +1370,7 @@
 			let parts = _pathParts[2].split('/');
 			const profileKey = parts[parts.length - 1];
 
-			const machinesData = await fetchJson(`/api/machines?profile=${profileKey}&offset=${_parameters.offset}&search=${_parameters.search}`);
+			const machinesData = await fetchJson(`/api/machines?profile=${profileKey}&offset=${_parameters.offset}&search=${_parameters.search}&sortColumn=${_parameters.sortColumn || ''}&sortDirection=${_parameters.sortDirection || ''}`);
 
 			showMachines(canvas, machinesData, profileKey);
 		}
@@ -1294,77 +1380,24 @@
 		//
 		const showMachines = (canvas, machinesData, profileKey) => {
 
-			const columnDefs = [
-				{ heading: '', columnName: 'ao_image' },
-				{ heading: 'fav', columnName: 'favorite' },
-				{ heading: 'name', columnName: 'name' },
-				{ heading: 'description', columnName: 'description' },
-				{ heading: 'year', columnName: 'year' },
-				{ heading: 'manufacturer', columnName: 'manufacturer' },
-				{ heading: 'roms', columnName: 'ao_rom_count' },
-				{ heading: 'disks', columnName: 'ao_disk_count' },
-				{ heading: 'lists', columnName: 'ao_softwarelist_count' },
-				{ heading: 'cloneof', columnName: 'cloneof' },
-				{ heading: 'romof', columnName: 'romof' },
-				{ heading: 'status', columnName: 'status' },
-				{ heading: 'emulation', columnName: 'emulation' },
-			];
-
-			const table = document.createElement('table');
-			table.style = 'width:100%;';
-
-			buildTable(columnDefs, machinesData.results, table, (columnDef, result, resultIndex, row, cell) => {
-
-				const value = result[columnDef.columnName];
-
-				if (value === undefined)
-					return;
-
-				cell.innerHTML = value;
-
-				switch (columnDef.columnName) {
-					case 'ao_image':
-						if (result.ao_softwarelist_count > 0)
-							cell.innerHTML = `<a id="${result.name}" href="${_baseUrl}/machines/${profileKey}/${result.name}"><div style="width:128px;height:128px;"><img src="${result.ao_image}" loading="lazy" /></div></a>`;
-						else
-							cell.innerHTML = `<a id="${result.name}" onclick="runCommand('${result.name}@${_info.core_name}')" href="javascript:void(0);"><div style="width:128px;height:128px;"><img src="${result.ao_image}" loading="lazy" /></div></a>`;
-						break;
-
-					case 'name':
-						cell.innerHTML = `<a href="https://data.spludlow.co.uk/${_info.core_name}/machine/${result.name}" target="_blank">${result.name}</a>`;
-						break;
-
-					case 'cloneof':
-						cell.innerHTML = `<a href="/machines/everything?search=${value}">${value}</a>`;
-						row.className = (resultIndex % 2) ? 'clone-odd' : 'clone-even';
-						break;
-
-					case 'romof':
-						cell.innerHTML = `<a href="/machines/everything?search=${value}">${value}</a>`;
-						break;
-
-					case 'favorite':
-						cell.innerHTML = `<input type="checkbox" id="fav_${result.name}" onclick="changeFavoriteMachine(this.id, ${resultIndex})" ${result.favorite ? 'checked' : ''}>`;
-						if (result.favorite === true)
-							cell.className = (resultIndex % 2) ? 'fav-odd' : 'fav-even';
-						break;
-
-					case 'status':
-						cell.className = result.status + (resultIndex % 2 ? '-odd' : '-even');
-						break;
-
-				}
-
-				if (cell.innerHTML === '0')
-					cell.innerHTML = '';
-			});
-
 			const navHtml = navigateHtml(machinesData);
 
 			let html = '';
 
 			html += `<input id="inputText" type="text" value="${_parameters.search}" style="width:480px;" />`;
 			html += '<button type="submit" onclick="searchButton(); return false;">Search</button>';
+			html += '&nbsp;&nbsp;';
+			html += 'Sort by: <select id="sortSelect" onchange="changeSortMachines()">';
+			html += '<option value="description">Name</option>';
+			html += '<option value="year">Year</option>';
+			html += '<option value="manufacturer">Manufacturer</option>';
+			html += '<option value="name">ROM Name</option>';
+			html += '</select>';
+			html += '&nbsp;';
+			html += '<select id="sortDirection" onchange="changeSortMachines()">';
+			html += '<option value="asc">Ascending</option>';
+			html += '<option value="desc">Descending</option>';
+			html += '</select>';
 			html += '<hr />';
 			html += `<nav>${navHtml}</nav>`;
 			html += '<div id="results"></div>';
@@ -1376,14 +1409,78 @@
 
 			const results = document.getElementById('results');
 
-			results.appendChild(table);
-
-			if (machinesData.results.length === 0)
+			if (machinesData.results.length === 0) {
 				results.insertAdjacentHTML('beforeend', `<p><b>No results - try looking in <a href="/machines/everything?search=${_parameters.search}">Everything</a></b></p>`);
+			} else {
+				// Create grid container
+				const grid = document.createElement('div');
+				grid.className = 'game-grid';
+
+				machinesData.results.forEach((result, index) => {
+					const card = document.createElement('div');
+					card.className = 'game-card';
+					if (result.status) {
+						card.classList.add(`game-card-status-${result.status.toLowerCase()}`);
+					}
+
+					// Determine click action
+					let clickAction = '';
+					if (result.ao_softwarelist_count > 0) {
+						clickAction = `window.location.href='${_baseUrl}/machines/${profileKey}/${result.name}'`;
+					} else {
+						clickAction = `runCommand('${result.name}@${_info.core_name}')`;
+					}
+
+					card.innerHTML = `
+						<div class="game-card-image" onclick="${clickAction}">
+							<img src="${result.ao_image}" loading="lazy" alt="${result.description || result.name}" />
+						</div>
+						<div class="game-card-info">
+							<div class="game-card-title" title="${result.description || result.name}">${result.description || result.name}</div>
+							<div class="game-card-row"><span class="game-card-label">Name:</span><span class="game-card-value">${result.name}</span></div>
+							${result.year ? `<div class="game-card-row"><span class="game-card-label">Year:</span><span class="game-card-value">${result.year}</span></div>` : ''}
+							${result.manufacturer ? `<div class="game-card-row"><span class="game-card-label">Mfr:</span><span class="game-card-value" title="${result.manufacturer}">${result.manufacturer}</span></div>` : ''}
+							${result.ao_rom_count > 0 ? `<div class="game-card-row"><span class="game-card-label">ROMs:</span><span class="game-card-value">${result.ao_rom_count}</span></div>` : ''}
+							${result.ao_disk_count > 0 ? `<div class="game-card-row"><span class="game-card-label">Disks:</span><span class="game-card-value">${result.ao_disk_count}</span></div>` : ''}
+							${result.ao_softwarelist_count > 0 ? `<div class="game-card-row"><span class="game-card-label">Lists:</span><span class="game-card-value">${result.ao_softwarelist_count}</span></div>` : ''}
+							${result.cloneof ? `<div class="game-card-row"><span class="game-card-label">Clone:</span><span class="game-card-value">${result.cloneof}</span></div>` : ''}
+							${result.romof ? `<div class="game-card-row"><span class="game-card-label">ROM:</span><span class="game-card-value">${result.romof}</span></div>` : ''}
+							${result.status ? `<div class="game-card-row"><span class="game-card-label">Status:</span><span class="game-card-value">${result.status}</span></div>` : ''}
+							${result.emulation ? `<div class="game-card-row"><span class="game-card-label">Emu:</span><span class="game-card-value">${result.emulation}</span></div>` : ''}
+							<div class="game-card-row">
+								<span class="game-card-label">Fav:</span>
+								<input type="checkbox" id="fav_${result.name}" onclick="changeFavoriteMachine(this.id, ${index}); event.stopPropagation();" ${result.favorite ? 'checked' : ''} />
+							</div>
+						</div>
+					`;
+
+					grid.appendChild(card);
+				});
+
+				results.appendChild(grid);
+			}
 
 			const inputText = document.getElementById('inputText');
 			inputText.focus();
+			
+			// Set the selected sort values
+			document.getElementById('sortSelect').value = _parameters.sortColumn || 'name';
+			document.getElementById('sortDirection').value = _parameters.sortDirection || 'asc';
 		}
+		
+		const changeSortMachines = () => {
+			const sortColumn = document.getElementById('sortSelect').value;
+			const sortDirection = document.getElementById('sortDirection').value;
+			
+			const params = new URLSearchParams();
+			params.set('offset', 0); // Reset to first page when sorting
+			params.set('search', _parameters.search);
+			params.set('sortColumn', sortColumn);
+			params.set('sortDirection', sortDirection);
+			
+			window.location.href = `${_path}?${params.toString()}`;
+		}
+		
 		const changeFavoriteMachine = async (checkBoxId, resultIndex) => {
 			const checkBox = document.getElementById(checkBoxId);
 
@@ -1412,47 +1509,7 @@
 			let parts = _pathParts[4].split('/');
 			const softwarelist = parts[parts.length - 1];
 
-			const softwareData = await fetchJson(`/api/software?softwarelist=${softwarelist}&offset=${_parameters.offset}&search=${_parameters.search}&favorites_machine=${machineData.name}`);
-
-			const columnDefs = [
-				{ heading: '', columnName: 'ao_image' },
-				{ heading: 'fav', columnName: 'favorite' },
-				{ heading: 'name', columnName: 'name' },
-				{ heading: 'description', columnName: 'description' },
-				{ heading: 'year', columnName: 'year' },
-				{ heading: 'publisher', columnName: 'publisher' },
-				{ heading: 'cloneof', columnName: 'cloneof' },
-				{ heading: 'supported', columnName: 'supported' },
-			];
-
-			if (_path.endsWith('/@fav') === true)
-				columnDefs.push({ heading: 'software list', columnName: 'softwarelist_name' });
-
-			const table = document.createElement('table');
-			table.style = 'width:100%;';
-
-			buildTable(columnDefs, softwareData.results, table, (columnDef, result, resultIndex, row, cell) => {
-
-				switch (columnDef.columnName) {
-					case 'ao_image':
-						cell.innerHTML = `<a id="${result.name}" onclick="runCommand('${machineData.name}@${_info.core_name} ${result.name}@${result.softwarelist_name}')" href="javascript:void(0);"><div style="width:128px;height:128px;"><img src="${result.ao_image}" loading="lazy" /></div></a>`;
-						break;
-
-					case 'name':
-						cell.innerHTML = `<a href="https://data.spludlow.co.uk/${_info.core_name}/software/${result.softwarelist_name}/${result.name}" target="_blank">${result.name}</a>`;
-						break;
-
-					case 'favorite':
-						cell.innerHTML = `<input type="checkbox" id="fav_${result.name}" onclick="changeFavoriteSoftware(this.id, '${machineData.name}', '${result.softwarelist_name}', ${resultIndex})" ${result.favorite ? 'checked' : ''}>`;
-						if (result.favorite === true)
-							cell.className = (resultIndex % 2) ? 'fav-odd' : 'fav-even';
-						break;
-
-					default:
-						cell.innerHTML = result[columnDef.columnName] ?? '';
-						break;
-				}
-			});
+			const softwareData = await fetchJson(`/api/software?softwarelist=${softwarelist}&offset=${_parameters.offset}&search=${_parameters.search}&favorites_machine=${machineData.name}&sortColumn=${_parameters.sortColumn || ''}&sortDirection=${_parameters.sortDirection || ''}`);
 
 			const navHtml = navigateHtml(softwareData);
 
@@ -1471,7 +1528,43 @@
 
 			const results = document.getElementById('results');
 
-			results.appendChild(table);
+			if (softwareData.results.length === 0) {
+				results.insertAdjacentHTML('beforeend', `<p><b>No results</b></p>`);
+			} else {
+				// Create grid container
+				const grid = document.createElement('div');
+				grid.className = 'game-grid';
+
+				softwareData.results.forEach((result, index) => {
+					const card = document.createElement('div');
+					card.className = 'game-card';
+
+					const clickAction = `runCommand('${machineData.name}@${_info.core_name} ${result.name}@${result.softwarelist_name}')`;
+
+					card.innerHTML = `
+						<div class="game-card-image" onclick="${clickAction}">
+							<img src="${result.ao_image}" loading="lazy" alt="${result.description || result.name}" />
+						</div>
+						<div class="game-card-info">
+							<div class="game-card-title" title="${result.description || result.name}">${result.description || result.name}</div>
+							<div class="game-card-row"><span class="game-card-label">Name:</span><span class="game-card-value">${result.name}</span></div>
+							${result.year ? `<div class="game-card-row"><span class="game-card-label">Year:</span><span class="game-card-value">${result.year}</span></div>` : ''}
+							${result.publisher ? `<div class="game-card-row"><span class="game-card-label">Pub:</span><span class="game-card-value" title="${result.publisher}">${result.publisher}</span></div>` : ''}
+							${result.cloneof ? `<div class="game-card-row"><span class="game-card-label">Clone:</span><span class="game-card-value">${result.cloneof}</span></div>` : ''}
+							${result.supported ? `<div class="game-card-row"><span class="game-card-label">Support:</span><span class="game-card-value">${result.supported}</span></div>` : ''}
+							${_path.endsWith('/@fav') && result.softwarelist_name ? `<div class="game-card-row"><span class="game-card-label">List:</span><span class="game-card-value">${result.softwarelist_name}</span></div>` : ''}
+							<div class="game-card-row">
+								<span class="game-card-label">Fav:</span>
+								<input type="checkbox" id="fav_${result.name}" onclick="changeFavoriteSoftware(this.id, '${machineData.name}', '${result.softwarelist_name}', ${index}); event.stopPropagation();" ${result.favorite ? 'checked' : ''} />
+							</div>
+						</div>
+					`;
+
+					grid.appendChild(card);
+				});
+
+				results.appendChild(grid);
+			}
 
 			const inputText = document.getElementById('inputText');
 			inputText.focus();
@@ -1509,11 +1602,39 @@
 			const totalPages = Math.ceil(data.total / data.limit);
 			const currentPage = (data.offset / data.limit) + 1;
 
-			return `<a href="${_path}?offset=${_parameters.offset - limit}&search=${encodeURIComponent(_parameters.search)}">PREV</a>` +
-				'&nbsp; - &nbsp;' +
-				`<a href="${_path}?offset=${_parameters.offset + limit}&search=${encodeURIComponent(_parameters.search)}">NEXT</a>` +
-				'&nbsp; - &nbsp;' +
-				`page: ${currentPage} / ${totalPages} - total: ${data.total} - viewing: ${data.count}`;
+			// Build URL with all current parameters
+			const buildNavUrl = (offset) => {
+				const params = new URLSearchParams();
+				params.set('offset', offset);
+				params.set('search', _parameters.search);
+				if (_parameters.sortColumn) {
+					params.set('sortColumn', _parameters.sortColumn);
+				}
+				if (_parameters.sortDirection) {
+					params.set('sortDirection', _parameters.sortDirection);
+				}
+				return `${_path}?${params.toString()}`;
+			};
+
+			const firstPage = buildNavUrl(0);
+			const lastPage = buildNavUrl((totalPages - 1) * limit);
+			const prevPage = buildNavUrl(Math.max(0, _parameters.offset - limit));
+			const nextPage = buildNavUrl(Math.min((totalPages - 1) * limit, _parameters.offset + limit));
+
+			const buttonStyle = 'display:inline-block;min-width:40px;text-align:center;padding:6px 10px;border:2px solid #ccc;border-radius:8px;text-decoration:none;color:#333;background-color:#f5f5f5;';
+			const currentPageStyle = 'display:inline-block;min-width:60px;text-align:center;padding:6px 10px;border:2px solid #4a90e2;border-radius:8px;background-color:#4a90e2;color:white;font-weight:bold;';
+
+			return `<div style="margin-top:15px;margin-bottom:15px;"><a href="${firstPage}" title="First page" style="${buttonStyle}">&lt;&lt;</a>` +
+				'&nbsp;' +
+				`<a href="${prevPage}" title="Previous page" style="${buttonStyle}">&lt;</a>` +
+				'&nbsp;' +
+				`<span style="${currentPageStyle}">${currentPage} / ${totalPages}</span>` +
+				'&nbsp;' +
+				`<a href="${nextPage}" title="Next page" style="${buttonStyle}">&gt;</a>` +
+				'&nbsp;' +
+				`<a href="${lastPage}" title="Last page" style="${buttonStyle}">&gt;&gt;</a>` +
+				'&nbsp; &nbsp;' +
+				`<span style="color:#666;">(total: ${data.total} - viewing: ${data.count})</span></div>`;
 		}
 
 		//
@@ -1540,32 +1661,81 @@
 				alert(result.message);
 		}
 
-		const buildTableHeader = (columnDefs, table) => {
+		const buildTableHeader = (columnDefs, table, enableSorting = true) => {
 			const headRow = document.createElement('tr');
-			columnDefs.forEach((columnDef) => {
+			columnDefs.forEach((columnDef, index) => {
 				const cell = document.createElement('th');
-				cell.innerHTML = columnDef.heading;
+				
+				// Check if this specific column is sortable (default to true if not specified)
+				const isSortable = enableSorting && (columnDef.sortable !== false);
+				
+				if (isSortable) {
+					cell.style.cursor = 'pointer';
+					cell.style.userSelect = 'none';
+					
+					// Check if this column is currently sorted
+					const isSorted = _parameters.sortColumn === columnDef.columnName;
+					const direction = _parameters.sortDirection || '';
+					
+					let indicator = '⇅';
+					if (isSorted) {
+						indicator = direction === 'asc' ? '▲' : '▼';
+						cell.dataset.sortDirection = direction;
+					}
+					
+					cell.innerHTML = `${columnDef.heading} <span class="sort-indicator">${indicator}</span>`;
+					cell.onclick = () => sortTable(table, index, columnDef.columnName);
+					cell.title = `Click to sort by ${columnDef.heading}`;
+				} else {
+					cell.innerHTML = columnDef.heading;
+				}
+				
 				headRow.appendChild(cell);
 			});
 			table.appendChild(headRow);
 		}
 
-		const buildTable = (columnDefs, results, table, cellFunction) => {
+		const buildTable = (columnDefs, results, table, cellFunction, enableSorting = true) => {
 
-			buildTableHeader(columnDefs, table);
+			buildTableHeader(columnDefs, table, enableSorting);
 
 			results.forEach((result, resultIndex) => {
 
 				const row = document.createElement('tr');
+				row.dataset.originalIndex = resultIndex;
 
 				columnDefs.forEach((columnDef) => {
 					const cell = document.createElement('td');
+					cell.dataset.rawValue = result[columnDef.columnName] ?? '';
 					cellFunction(columnDef, result, resultIndex, row, cell);
 					row.appendChild(cell);
 				});
 
 				table.appendChild(row);
 			});
+		}
+
+		const sortTable = (table, columnIndex, columnName) => {
+			// Determine current sort direction from URL parameters
+			let currentDirection = _parameters.sortDirection || 'none';
+			let currentColumn = _parameters.sortColumn || '';
+			
+			// If clicking a different column, default to ascending
+			// If clicking the same column, toggle direction
+			let newDirection = 'asc';
+			if (currentColumn === columnName) {
+				newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+			}
+			
+			// Build new URL with sort parameters
+			const params = new URLSearchParams();
+			params.set('offset', _parameters.offset);
+			params.set('search', _parameters.search);
+			params.set('sortColumn', columnName);
+			params.set('sortDirection', newDirection);
+			
+			// Navigate to new URL with sort parameters
+			window.location.href = `${_path}?${params.toString()}`;
 		}
 
 		const getRequestInfo = () => {
@@ -1590,6 +1760,13 @@
 
 			if (_parameters['search'] === undefined)
 				_parameters['search'] = '';
+
+			// Set default sort to description ascending if not specified
+			if (_parameters['sortColumn'] === undefined)
+				_parameters['sortColumn'] = 'description';
+			
+			if (_parameters['sortDirection'] === undefined)
+				_parameters['sortDirection'] = 'asc';
 
 			_path = document.location.pathname;
 
