@@ -3,6 +3,7 @@ Easiest way to use MAME & HBMAME. Automatic download and setup of all files from
 
 **Enhanced Fork** - This is an enhanced version of the original MAME-AO by [Sam Ludlow](https://github.com/sam-ludlow/mame-ao) with additional features including:
 - 🎨 **Colorized Console Output** - Beautiful ANSI color-coded interface for better readability
+- 📊 **Sortable Columns** - Click column headers in the web UI to sort machine lists
 - 📖 **Built-in Help System** - New `.help` command with comprehensive command reference
 - ⚡ **Enhanced Asset Commands** - New `.place` and `.update` commands for easier asset management
 - 🎯 **Improved User Experience** - Better visual feedback and progress indicators
