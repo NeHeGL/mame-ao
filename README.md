@@ -7,7 +7,7 @@ Easiest way to use MAME & HBMAME. Automatic download and setup of all files from
 - ⚡ **Enhanced Asset Commands** - New `.place` and `.update` commands for easier asset management
 - 🎯 **Improved User Experience** - Better visual feedback and progress indicators
 
-![MAME-AO UI](https://raw.githubusercontent.com/sam-ludlow/mame-ao/main/images/mame-ao-ui.png)
+![MAME-AO Enhanced UI](images/mame-ao-enhanced.png)
 
 ## Installation & Usage
 - create an empty directory e.g. `C:\MameAO`
@@ -61,8 +61,6 @@ NOTE: MAME-AO application is 32 bit to keep RAM usage down.
  
 ## Reporting issues
 https://github.com/NeHeGL/mame-ao/issues
-
-For issues with the original MAME-AO (non-enhanced features), please report to the original project: https://github.com/sam-ludlow/mame-ao/issues
 
 ## HBMAME - HomeBrew MAME
 Enable HBMAME from the about page or use the command `.core hbmame`. Only works with BitTorrent, DOME-BT will restart to enable new core.
