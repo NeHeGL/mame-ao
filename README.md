@@ -11,7 +11,7 @@ Easiest way to use MAME & HBMAME. Automatic download and setup of all files from
 
 ## Installation & Usage
 - create an empty directory e.g. `C:\MameAO`
-- download latest release ZIP from https://github.com/NeHeGL/mame-ao/releases/latest (Do not use `_x64`)
+- download latest release ZIP from https://github.com/NeHeGL/mame-ao/releases/latest
 - put ZIP in empty directory and extract
 - double click "mame-ao.exe"
 - wait for the MAME-AO to start
