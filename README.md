@@ -22,17 +22,6 @@ Easiest way to use MAME & HBMAME. Automatic download and setup of all files from
 
 NOTE: First time it has to extract MAME's data, this will take a moment, next time it will start quickly, version bumps in MAME or MAME-AO will trigger further data initializations.
 
-## Virus Detected
-This software can be falsely reported as malicious software. 
-
-You have my word that it is Kosher. The binaries are built using GitHub Actions.
-
-Your Web browser, Windows, and other security software may attempt to block downloading and running MAME-AO & DOME-BT, check the pop-ups carefully there will be an option somewhere to allow.
-
-The command `.upany` after initial setup may help with Microsoft Defender notices.
-
-NOTE: Some software list items are infected. MAME-AO will download them if asked, this may trigger alerts if the software is DOS/Windows based. This is not dangerous to your computer, only to the system being emulated within MAME.
-
 ## Enter your Archive.org credentials (Option 1)
 If you intend on using BitTorrent you can skip this step, press `ENTER` twice. You can enter your credentials later with the command `.creds`.
 
